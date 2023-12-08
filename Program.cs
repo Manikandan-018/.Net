@@ -1,21 +1,49 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using World.API.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddRazorPages();
+
+#region Configure CORS
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CustomPolicy", x => x.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+});
+
+#endregion
+
+#region Configure Database
+var connectionString = builder.Configuration.GetConnectionString("DefalutConnection");
+
+builder.Services.AddDbContext<ApplicationDbContext>(options=>options.UseSqlServer(connectionString));
+
+
+#endregion
+
+builder.Services.AddControllers();
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error");
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
-app.UseStaticFiles();
 
-app.UseRouting();
+app.UseCors("CustomPolicy");
+
+
+app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-app.MapRazorPages();
+app.MapControllers();
 
 app.Run();
